@@ -1,0 +1,46 @@
+# ------------------------ Template Estatico ------------------------
+
+Resources:
+  MyEC2Instance:
+    Type: AWS::eC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: "ami-05fa00d4c63e32376"
+      KeyName: "aws"
+      SecurityGroupIds:
+        - sg-0c854b0c402eddd67
+        - sg-06cb393e6cdd1638a
+      Tags:
+        - Key: Name
+          Value: MinhaPrimeiraInstancia
+        - Key: Module
+          Value: IaC
+
+# ----------------------- Template Dinamico --------------------------
+
+Paramenters:
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup::GroupName
+  ImageId:
+    Type: String
+    Default: "ami-05fa00d4c63e32376"
+  KeyPair:
+    Type: AWS::EC2::KeyPair::KeyName
+  InstanceType:
+    Type: String
+    Default: t2.micro
+
+Resources:
+  MyEC2Instance:
+    Type: AWS::eC2::Instance
+    Properties:
+      ImageId: !Ref ImageID
+      KeyName: !Ref KeyPair
+      SecurityGroupIds:
+        - !Ref SecurityGroup
+      InstanceType: !Ref InstanceType
+      Tags:
+        - Key: Name
+          Value: MinhaPrimeiraInstancia
+        - Key: Module
+          Value: IaC

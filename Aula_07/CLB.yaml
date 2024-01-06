@@ -1,0 +1,32 @@
+Parameters:
+  ResourcesName:
+    Type: String
+  VPC:
+    Type: AWS::EC2::VPC::Id
+  SecurityGroup:
+    Type: AWS::EC2::Security::Id
+  Subnets:
+    Type: 'List<AWS::EC2::Subnet::Id>'
+  #InstanceTargets:
+  # Type: AWS::eC2::Instance::Id
+  ResourcesName:
+    Type: String
+
+ResourcesName:
+  MyLoadBalancer:
+    Type AWS::ElasticLoadBalancing::LoadBalancer
+    Properties:
+      LoadBalancerName: !Ref ResourcesName
+      Listeners:
+      - InstancePort: '80'
+        InstanceProcol: HTTP
+        LoadBalancerPort: '80'
+        Protocol: HTTP
+      LoadBalancerName: !Ref ResourcesName
+      Scheme: internet-facing
+      SecurityGroups:
+        - !Ref SecurityGroup
+      Subnets: !Ref Subnets
+      Tags:
+        - Key: Environment
+          Value: Production
