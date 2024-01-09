@@ -1,0 +1,94 @@
+Parameters:
+#Geral
+  ResourcesName:
+    Type: String
+#InstÂncia EC2
+  ImageId:
+    Type: String
+    Default:  "ami-01ae6537574400177"
+  KeyPair:
+    Type: AWS::EC2::KeyPair::KeyName
+  InstanceType:
+    Type: String
+    Default: t2.micro
+  NameSecurityGroupInstance:
+    Type: String
+    Default: SecurityGroupInstance
+#CLB
+  VPC:
+    Type: AWS::EC2::VPC::Id
+  Subnets:
+    Type: AWS::EC2::Subnet::Id
+  NameSecurityGroupALB:
+    Type: String
+    Default: SecurityGroupALB
+#SGP
+  IP:
+    Type: String
+    Default: 0.0.0.0/0
+
+Resources:
+  EC2Instance:
+    Type: AWS::EC2:Instance
+    DependsOn: SecurityGroupInstance
+    Properties:
+    ImageId: !Ref ImageId
+    KeyName: !Ref KeyPair
+    SecurityGroupIds:
+      - !Ref SecurityGroupInstance
+    InstanceType: !Ref InstanceType
+    SubnetId: !Ref Subnets
+    Tags:
+      - Key: Name
+      Value: !Ref ResourcesName
+
+MyLoadBalancer:
+  Type: AWS::ElaticLoadBalancing::LoadBalancer
+  DependsOn:
+    - SecurityGroupALB
+    - EC2Instance
+  Properties:
+    LoadBalancerName: !Ref ResourcesName
+    Instances:
+    - !Ref EC2Instance
+    Listeners:
+    - InstancePort: '80'
+      InstanceProtocol: HTTP
+      LoadBalancerPort: '80'
+      Protocol: HTTP
+    LoadBalancerPortName: !Ref ResourcesName
+    Scheme: Internet-facing
+    SecurityGroups:
+      - !RefSecurityGroupALB
+    Subnets:
+      - !Ref Subnets
+    HealthCheck:
+      HealthyThreshold: 2
+      Target: HTTP:80/
+      Timeout: 5 
+      Interval: 6
+      UnhealthyThreshold: 2
+    Tags:
+      - Key: Environment
+        Value: Production
+      - Key: Purpose
+        Value: WebServerGroup
+
+SecurityGroupALB:
+  Type: AWS::EC2::SecurityGroup
+  Properties: GroupDescription: Security Group
+  VpcId: !Ref VPC
+  GroupName: !Ref NameSecurityGroupALB
+  SecurityGroupIngress:
+  - IpProtocol: "-1"
+    CidrIp: !Ref IP
+
+SecurityGroupInstance:
+  Type: AWS::EC2::SecurityGroup
+  Properties:
+    GroupDescription: Security Group
+    VpcId: !Ref VPC
+    GroupName: !Ref NameSecurityGroupInstance
+    SecurityGroupIngress:
+    - IpProtocol: "-1"
+    CidrIp: !Ref IP

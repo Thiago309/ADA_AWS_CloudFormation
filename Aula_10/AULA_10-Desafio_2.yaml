@@ -1,0 +1,135 @@
+# --------------------------------  Parametros  -------------------------------
+Parameters:
+#Geral
+  ResourcesName:
+    Type: String
+    Projeto:
+      Type: String
+      Default: MyProject
+#ASG
+  ImageId:
+    Type: String
+    Default: "ami-01ae6537574400177"
+  KeyPair:
+    Type: AWS::EC2::KeyPair::KeyName
+  InstanceType:
+    Type: String
+    Default: t2.micro
+  NameSecurityGroupInstance:
+    Type: String
+    Default: SecurityGroupInstance2
+  InstanceType: 
+    Type: String
+    Default: t2.micro
+  MaxSize:
+    Type: String
+    Default: 1
+  MinSize: 
+    Type: String
+    Default: 1
+  DesiredCapacity:
+    Type: String
+    Default: 1
+#CLB
+  VPC:
+    Type: AWS::EC2::VPC::Id
+  Subnets:
+    Type: AWS::EC2::Subnet::Id
+  NameSecurityGroupALB:
+    Type: String
+    Default: SecurityGroupALB2
+#SGP
+  IP:
+    Type: String
+    Default: 0.0.0.0/0  
+
+#---------------------------  Recursos  --------------------------
+Resources:
+  MyLoadBalancer:
+    Type: AWS::ElaticLoadBalancing::LoadBalancer
+    DependsOn:
+      - SecurityGroupALB
+    Properties:
+      LoadBalancerName: !Ref ResourcesName
+      Listeners:
+      - InstancePort: '80'
+        InstanceProtocol: HTTP
+        LoadBalancerPorta: '80'
+        Protocol: HTTP
+      HealthCheck:
+        HealthyThreshold: 2
+        Target: HTTP:80/
+        Timeout: 5
+        Interval: 6
+        UnhealthyThreshold: 2
+      Scheme: internet-facing
+      SecurityGroups:
+        - !Ref SecurityGroupALB
+        - !Ref Subnets
+      Tags:
+        - Key: Projeto
+          Value: !Ref Projeto
+    
+    SecurityGroupALB:
+      Type: AWS::EC2::SecurityGroup
+      Properties:
+        GroupDescription: Security Group
+        VpcId: !Ref VPC
+        GroupName: !Ref NameSecurityGroupALB
+        SecurityGroupIngress:
+        - IpProtocol: "-1"
+          CidrIp: !Ref IP
+        Tags:
+          - Key: Projeto
+          Value: !Ref Projeto
+
+    SecurityGroupInstance:
+      Type: AWS::EC2::SecurityGroup
+      Properties:
+        GroupDescription: Security Group
+        VpcId: !Ref VPC
+        GroupName: !Ref NameSecurityGroupInstance
+        SecurityGroupIngress:
+        - IpProtocol: "-1"
+          CidrIp: !Ref IP
+        Tags:
+          - Key: Projeto
+            Value: !Ref Projeto
+    
+    MyAutoScaling:
+      Type: AWS::AutoScaling::AutoScalingGroup
+      DependsOn:
+        - MyLaunchTemplate
+        - MyLoadBalancer
+      Properties:
+        LaunchTemplate:
+          LaunchTemplateId: !Ref MyLaunchTemplate
+          Version: !GetAtt MyLaunchTemplate.LastestVersionNumber
+        MaxSize: !Ref MaxSize
+        MinSize: !Ref MinSize
+        DesiredCapacity: !Ref DesiredCapacity
+        VPCZoneIdentifier:
+          - !Ref Subnets
+        LoadBalancerNames:
+          - !Ref MyLoadBalancer
+        Tags: 
+          - Key: Projeto
+            Value: !Ref Projeto
+            PropagateAtLaunch: true
+  
+  MyLaungTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: MyLaunchTemplate2
+      LaunchTemplateData: 
+        ImageId: !Ref ImageId
+        InstanceType: !Ref InstanceType
+        KeyName: !Ref KeyPair
+        SecurityGroupIds:
+          - !Ref SecurityGroupInstance
+      HealthCheck:
+        HealthyThreshold: 2
+        Target: HTTP:80/
+        Timeout: 5 
+        Interval: 6
+        UnchealthyThreshold: 2

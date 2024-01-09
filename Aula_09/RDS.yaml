@@ -1,0 +1,67 @@
+# --------------------------  Parametros  ----------------------------------
+Parameters:
+  DBName: # Nome da base de dados.
+    Type: String
+    Default: wordpress
+  Engine: # Definição de qual versão do SQL será utilizada.
+    Type: String
+    Default: mysql # Oracle | MariaDB | PostegreSQL | SQL Server.
+  MasterUserPassword: # Não deve ser utilizado para o formato de sistema produtivo, pois 
+    Type: String      # todos irão ver sua senha root .
+  MasterUserName:     # Não é usual usar dessa maneira, deve se usado o serviços: AWS Secrets Manager ou integração 
+    Type: String      # de serviços para segredo.
+    Default: admin
+  DBInstanceClass:
+    Type: String
+    Default: db.t3.micro
+  DBSubnetName:
+    Type: String
+  Subnets:
+    Type: 'List<AWS::EC2::Subnet::Id>'
+  DBInstanceIdentifier: # Nome da Instancia RDS.  
+    Type: String
+  VPC: 
+    Type:AWS::EC2::VPC::Id
+  IP: # Parametro que referencia o SecurityGroup (A:47) para que passamos ter o acesso ao banco de dados.
+    Type: String
+    Default:0.0.0.0/0
+
+# ----------------------------- Recursos -------------------------------
+Resources:
+  DBSubnetGroup:
+  Type: AWS::RDS::DBSubnetGroup
+  Properties:
+    DBSubnetGroupDescription: !Ref DBSubnetName
+    DBSubnetGroupName: !Ref DBSubnetName
+    SubnetIds: !Ref Subnets
+
+# --------------------------- Instanciando Base de Dados  ---------------
+DatabaseInstance:
+  Type: AWS::RDS::DBInstance
+  DependsOn:  # A instancia do DB só inicia depois que o SecurityGroup for criado. Função condicional.
+    - DBSecurityGroup
+   Properties:
+    DBInstanceIdentifier: !Ref DBInstanceIdentifier
+    DBInstanceClass: !Ref DBInstanceClass
+    DBName: !Ref DBSubnetName # Nome da instancia RDS.
+    Engine: !Ref Engine       
+    MasterUserPassword: !Ref MasterUserPassword
+    MasterUsername: !Ref MasterUsername
+    PubliclyAcessible: true # É publicamente acessivel? Sim, pois a conexão será realizada via internet.
+    AllocatedStorage: 20
+    DBSubnetGroupName: !Ref DBSubnetGroup
+    VPCSecurityGroups:
+    - !Ref DBSecurityGroup
+
+# ------------------------- Segurança para a Base de Dados  ---------------------------- 
+DBSecurityGroup: # (A:47)       # Diferente dos outros templates que já tinham grupos de segurança pré 
+  Type: AWS::EC2::SecurityGroup # definidos da propria AWS, aqui estamos definindo um grupo de segurança 
+  Properties:                   # do zero.
+    GroupDescription: RDS Security Group
+    VpcId: !Ref IP
+    GroupName: MySecurityGroup
+    SecurityGroupIngress:
+    - IpProtocol: "tcp"
+    FromPort: 3306
+    ToPort: 3306
+    cidrIp: !Ref VpcCIDR
