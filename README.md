@@ -3,4 +3,5 @@
 Utilizando serviços da AWS através do CloudFormation
  
  AULA 06 - Templates Dinamicos e Estaticos.
+ 
  AULA 07 - Balanceador de Carga.
