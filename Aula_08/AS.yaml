@@ -1,0 +1,49 @@
+# ------------------- Parametros ---------------------
+Parameters:
+  ResourcesName:
+    Type: String
+  SecurityGroup:
+    Type: AWS::EC2::securityGroup::Id
+  Subnets:
+    Type: 'List<AWS::EC2::subnet::Id>'
+  KeyPair:
+    Type: AWS::EC2::KeyPair::KeyName
+  MaxSize:         # Capacidade MÁXIMA de instancias que poderão ser inicializadas atraves do Auto Scaling.
+    Type: String
+    Default: 10    # Vou querer que se inicie até no máximo 10 instâncias.
+  MinSize:         # Capacidade MÍNIMA de instancias que serão inicializadas.
+    Type: String
+    Default: 1     # Vou querer que meu sistema trabalhe com no minimo uma (1) instância.
+  DesiredCapacity: # Capacidade desejado naquele momento 
+    Type: String
+    Default: 3     # Vou querer que meu sistema inicie com três (3) instâncias.
+  Nomedoprojeto:         # Definição de Tag do projeto.
+    Type: String
+
+# --------------------- Recursos --------------------------
+
+Resources:
+  MyAutoSaling:
+    Type: AWS::AutoScaling::AutoScalingGroup  # Definição do tipo AutoScaling.
+    Properties:
+      LaunchTemplate:         # Padrão de inicialização da Instância
+        LaunchTemplateId: !Ref MyLaunchTemplate # Faz referencia para o bloco a baixo (A:23) MyLaunchTemplate para inicialização do AutoScaling.
+        Version: !GetAtt MyLaunchTemplate.LatestVersionNumber # Referencia para versão do template (Alterações feitas no template depois de sua inicialização).
+      MaxSize: !Ref MaxSize
+      MinSize: !Ref MinSize
+      DesiredCapacity: !Ref DesiredCapacity
+      VPCZoneIdentifier: !Ref Subnets
+      Tags:
+        - Key: Nomedoprojeto
+          Value: !Ref Nomedoprojeto
+          PropagateAtLaunch: true   # Serve para definir a Tag no AutoScaling.
+MyLaunchTemplate: # Bloco(A:23)
+  Type: AWS::EC2::LaunchTemplate
+  Properties:
+    LaunchTemplateName: MuLaunchTemplate
+    LaunchTemplateData:
+      ImageId: ami-01ae6537574400177
+      InstanceType: ts2.micro
+      KeyName: !Ref KeyPair
+      SecurityGroupIds:
+      - !Ref SecurityGroup
